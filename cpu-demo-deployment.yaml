@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpu-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cpu-demo
+  template:
+    metadata:
+      labels:
+        app: cpu-demo
+    spec:
+      containers:
+      - name: cpu-demo
+        image: vish/stress
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 200m
+        args:
+        - -cpus
+        - "2"
+      - name: sidecar-logger
+        image: busybox
+        command: ["sh", "-c", "while true; do echo sidecar running; sleep 10; done"]
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 50m
+            memory: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpu-demo-service
+spec:
+  selector:
+    app: cpu-demo
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: NodePort
